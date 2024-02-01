@@ -41,5 +41,35 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-    //// Replace this comment with your code.
+    // zero the input, if zx or zy are true
+    Mux16(a = x, b[0..15] = false, sel = zx, out = x1);
+    Mux16(a = y, b[0..15] = false, sel = zy, out = y1);
+
+    // Negate the inputs if nx or ny are true
+    Not16(in = x1, out = nx1);
+    Not16(in = y1, out = ny1);
+    Mux16(a = x1, b = nx1, sel = nx, out = x2);
+    Mux16(a = y1, b = ny1, sel = ny, out = y2);
+
+    // Perform the requested operation
+    And16(a = x2, b = y2, out = andout);
+    Add16(a = x2, b = y2, out = addout);
+    Mux16(a = andout, b = addout, sel = f, out = out1);
+
+    // Negate the output if no is true
+    Not16(in = out1, out = nout);
+    Mux16(a = out1, b = nout, sel = no, out = outfinal, out = out);
+
+    // Set the zr outputs
+    And16(a = outfinal, b[0..7] = true, b[8..15] = false, out[0..7] = out07);
+    And16(a = outfinal, b[0..7] = false, b[8..15] = true, out[8..15] = out815);
+    Or8Way(in = out07, out = zr1);
+    Or8Way(in = out815, out = zr2);
+    Or(a = zr1, b = zr2, out = zr3);
+    Not(in = zr3, out = zr);
+
+    // Set the ng outputs
+    And16(a = outfinal, b[0..15] = true, out[15] = high15);
+    And(a = high15, b = true, out = ng);
+    
 }
