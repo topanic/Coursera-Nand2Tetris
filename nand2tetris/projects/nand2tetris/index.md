@@ -60,7 +60,7 @@ CHIP Inc16 {
 }
 ```
 
-最后ALU的实现花了一些时间，主要还是用到了一些前面并没有出现的hdl语法问题，[这里是hdl语法连接](https://www.nand2tetris.org/_files/ugd/44046b_f0eaab042ba042dcb58f3e08b46bb4d7.pdf)，有需要可以点进去看看。
+最后ALU的实现花了一些时间，主要还是用到了一些前面并没有出现的hdl语法问题，[这里是hdl语法连接](https://www.ic.unicamp.br/~rodolfo/mc404/HDL_Survival_Guida-Nand2tetris.pdf)，有需要可以点进去看看。
 
 最主要的两个语法：
 
@@ -93,3 +93,101 @@ CHIP Foo {
 
 ## 03
 
+[此章的文档](https://www.nand2tetris.org/_files/ugd/44046b_862828b3a3464a809cda6f44d9ad2ec9.pdf)
+
+DFF已经实现了，按照文档的要求和先后顺序一步步实现就好了。
+
+值得一提的是PC，文章给出的只是PC abstraction，并没有给出具体的实现，所以需要自己设计一下PC的实现，可以参照下面的实现。因为PC要自增，需要有存储的结构在里面，所以这里需要一个Register来存储值。
+
+```
+CHIP PC {
+    IN in[16],inc, load, reset;
+    OUT out[16];
+    
+    PARTS:
+    Inc16(in = t, out = incout);
+    Mux16(a = t, b = incout, sel = inc, out = out1);
+    Mux16(a = out1, b = in, sel = load, out = out2);
+    Mux16(a = out2, b = false, sel = reset, out = out3);
+    Register(in = out3, load = true, out = t, out = out);
+}
+
+```
+
+**b**部分的实现都是一模一样，这里给出RAM512
+
+```
+CHIP RAM512 {
+    IN in[16], load, address[9];
+    OUT out[16];
+
+    PARTS:
+    DMux8Way(in = load, sel = address[6..8], a = load0, b = load1, c = load2, d = load3, e = load4, f = load5, g = load6, h = load7);
+
+    RAM64(in = in, load = load0, address = address[0..5], out = out0);
+    RAM64(in = in, load = load1, address = address[0..5], out = out1);
+    RAM64(in = in, load = load2, address = address[0..5], out = out2);
+    RAM64(in = in, load = load3, address = address[0..5], out = out3);
+    RAM64(in = in, load = load4, address = address[0..5], out = out4);
+    RAM64(in = in, load = load5, address = address[0..5], out = out5);
+    RAM64(in = in, load = load6, address = address[0..5], out = out6);
+    RAM64(in = in, load = load7, address = address[0..5], out = out7);
+
+    Mux8Way16(a = out0, b = out1, c = out2, d = out3, e = out4, f = out5, g = out6, h = out7, sel = address[6..8], out = out);
+}
+
+```
+
+## 04
+
+### 知识点
+
+#### 关于Hack
+
+Hack是基于冯诺依曼架构的16位计算机，由一个CPU、一个指令内存（ROM）、一个数据内存（RAM）和两个内存映射IO设备（显示器和键盘）组成。
+
+Hack数据总线位宽为16bit, 一次可以传输16bit的值；地址总线位宽15bit可以有2的15次方（32768）个不同的地址。
+
+Hack RAM：
+- 0-16384（16k）：data memory
+- 16384-24576（8k）：screen memory map
+- 24576-..：keyboard
+
+Hack有关字母：
+- **D**：Data Register, 只用来存储数据
+- **A**：Address Register, 用来存储数据和地址
+- **M**：Memory, 通过A中存储的地址来进行索引
+- **R0-R15**：0到15号RAM地址
+- **SP、LCL、ARG、THIS、THAT**：0到4号RAM地址
+- **SCREEN**：屏幕基地址（16384）
+- **KBD**：键盘基地址（24576）
+
+
+#### Hack汇编语法
+
+##### A指令
+
+`@value`
+
+给A存放一个15bit的值
+
+##### C指令
+
+`dest = comp; jump`
+
+#### I/O 输入输出
+
+**Display Unit**：*256行 * 512列*， 0表示白色， 1表示黑色，从16384地址开始。
+
+因为一个地址是16个bit, Display Unit一行是512个像素点，所以每32个地址就是一行，所以一共有256 * 32 = 8192个地址。
+
+**Keyboard**：按下某个键时，对应的16位ASCII码值出现在RAM\[24576\]。
+
+### 实现
+
+[还是先给出连接](https://www.nand2tetris.org/_files/ugd/44046b_7ef1c00a714c46768f08c459a6cab45a.pdf)
+
+这一章需要着重注意的是A指令的语法，若value是一个不为0的十进制数，代表给A寄存器存储一个值，若value是一个identifier, 则使用M可以取出value的值。
+若单独使用M, 而没有使用A指令的形式，那么M取出的就是以A为地址的值，所以语法不要用混了。
+
+第二个实现在课程中老师给出的例子就有，pointer那部分就是。
