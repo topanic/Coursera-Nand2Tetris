@@ -19,5 +19,14 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-    //// Replace this comment with your code.
+    DMux4Way(in = load, sel = address[13..14], a = RAM1, b = RAM2, c = sc, d = kb);
+    Or(a = RAM1, b = RAM2, out = ifRAM);
+
+    RAM16K(in = in, load = ifRAM, address = address[0..13], out = RAMout);
+    Screen(in = in, load = sc, address = address[0..12], out = Sout);
+    Keyboard(out = Kout);
+
+    Mux4Way16(a = RAMout, b = RAMout, c = Sout, d = Kout, sel = address[13..14], out = out); 
+
+
 }
