@@ -1,8 +1,8 @@
 package token
 
-var LF = "\n"
-var CR = "\r"
-var NEW_LINE = CR + LF
-var SPACE = byte(' ')
+const LF = "\n"
+const CR = "\r"
+const NEW_LINE = CR + LF
+const SPACE = byte(' ')
 
-var TAB = byte('\t')
+const TAB = byte('\t')

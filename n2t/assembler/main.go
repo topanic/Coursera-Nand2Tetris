@@ -8,7 +8,6 @@ import (
 	"assembler/token"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -59,10 +58,10 @@ func Assemble(input string) (binaryArr []string, err error) {
 }
 
 func AssembleAsmFile(asmFilename string, hackFilename string) error {
-	asm, _ := ioutil.ReadFile(asmFilename)
+	asm, _ := os.ReadFile(asmFilename)
 	input := string(asm)
 	binaryArr, _ := Assemble(input)
-	ioutil.WriteFile(hackFilename, []byte(strings.Join(binaryArr, token.NEW_LINE)), os.ModePerm)
+	os.WriteFile(hackFilename, []byte(strings.Join(binaryArr, token.NEW_LINE)), os.ModePerm)
 	return nil
 }
 
